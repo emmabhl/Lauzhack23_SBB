@@ -33,7 +33,11 @@ def get_journey(origin, destination, date, time):
 
     return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
 
-
-
-
+stop_url=API_URL + "/v3/places"
+def get_places(nameMatch):
+    request_body = {
+        "nameMatch": nameMatch}
+    return requests.post(stop_url,
+                         json=request_body, 
+                         headers={"Authorization": "Bearer " + token}).json()
 
