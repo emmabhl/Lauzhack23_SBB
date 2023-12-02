@@ -34,3 +34,6 @@ def get_journey(origin, destination, date, time):
     return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
 
 
+
+
+
