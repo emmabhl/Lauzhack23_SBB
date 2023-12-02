@@ -29,7 +29,6 @@ journey-maps​
 
 URL: https://journey-maps-apikey.api.sbb.ch/ ​
 
-api_key: bf9e3a88ab8101ba22ba8c752bbbcfd8 ​
 
 Request: As a request parameter:GET /path?api_key=YOUR_API_KEY  or as a request header:GET /path HTTP/1.1 X-API-Key: YOUR_API_KEY​
 
