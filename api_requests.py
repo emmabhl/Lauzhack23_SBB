@@ -10,7 +10,6 @@ SCOPE = "c11fa6b1-edab-4554-a43d-8ab71b016325/.default"
 trips_url = API_URL + "/v3/trips/by-origin-destination"
 station_url = API_URL + "/v3/places"
 
-
 def get_token():
     params = {
         "grant_type": "client_credentials",
@@ -38,3 +37,7 @@ def get_station(nameMatch):
     request_body = {
         "nameMatch": nameMatch}
     return requests.get(station_url, params=request_body, headers={"Authorization": "Bearer " + token}).json()
+
+def get_platform_floor(station, platform):
+    platform_floor_url = API_URL + "v1/master-data/stations/{}/platforms/{}/platform-info".format(station, platform)
+    return requests.get(platform_floor_url, headers={"Authorization": "Bearer " + token}).json()
