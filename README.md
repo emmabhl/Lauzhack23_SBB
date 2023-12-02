@@ -37,7 +37,6 @@ journey-map-tiles - Karte​
 
 URL: https://journey-maps-tiles.api.sbb.ch/ ​
 
-api_key: 8ff1e3c393578b6463f8a24b6baf0fd6 ​
 
 Request: As a request parameter:GET /path?api_key=YOUR_API_KEY  or as a request header:GET /path HTTP/1.1 X-API-Key: YOUR_API_KEY​
 
