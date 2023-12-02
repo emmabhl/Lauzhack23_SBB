@@ -22,8 +22,8 @@ def string_to_actual_time(result):
     # Get total time in minutes
     return hours_nb*60 + minutes_nb
 
+#Plus utile depuis que get_trips_infos existe
 def trip_durations(trips):
-    print([trip["duration"] for trip in trips])
     return [string_to_actual_time(trip["duration"]) for trip in trips]
 
 def departure_to_time(trip):
@@ -33,5 +33,21 @@ def departure_to_time(trip):
     departure = departure.replace(tzinfo=None)
     return departure
 
+#Plus utile depuis que get_trips_infos existe
 def get_departures_times(trips):
     return [departure_to_time(trip) for trip in trips]
+
+def get_trips_infos(journey):
+    res = []
+    for trip in journey['trips']:
+        numberStops = 0
+        for leg in trip['legs']:
+            for stop_point in leg['serviceJourney']['stopPoints']:
+                if stop_point['place']['type'] == 'StopPlace':
+                    numberStops += 1 
+        
+        departure_time = departure_to_time(trip)
+        duration = string_to_actual_time(trip['duration'])
+        
+        res.append({'id' : trip['id'], 'departune_time':departure_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'TotNumberStops': numberStops })
+    return res
