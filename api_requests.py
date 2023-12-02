@@ -7,7 +7,9 @@ CLIENT_ID = "f132a280-1571-4137-86d7-201641098ce8"
 SCOPE = "c11fa6b1-edab-4554-a43d-8ab71b016325/.default"
 
 # Others URLs
-trips_url = API_URL + "/v3/trips/by-origin-destination"
+TRIPS_URL = API_URL + "/v3/trips/by-origin-destination"
+NEARBY_PLACES_URL = API_URL + "/v3/places/by-coordinates-geojson"
+TRANSPORTS_FROM_ID_URL = API_URL + "/v3/vehicle-journeys/by-departure/"
 
 def get_token():
     params = {
@@ -31,6 +33,16 @@ def get_journey(origin, destination, date, time):
         "time": time,
     }
 
-    return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
+    return requests.post(TRIPS_URL, json=request_body, headers={"Authorization": "Bearer " + token}).json()
 
+def get_nearby_places(longitude, latitude, radius, limit, type, includeVehicleModes):
+    params = {
+        'center': f"[ {longitude}, {latitude} ]",
+        'radius': radius,
+        'limit': limit,
+        'type': type, # Get only stop places = train stops
+        'includeVehicleModes':includeVehicleModes} 
+    return requests.get(NEARBY_PLACES_URL, params=params, headers={"Authorization": "Bearer " + token}).json()
 
+def get_place_from_id(id):
+    return requests.get(TRANSPORTS_FROM_ID_URL+id, headers={"Authorization": "Bearer " + token}).json()
