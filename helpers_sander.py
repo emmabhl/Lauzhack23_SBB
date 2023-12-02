@@ -102,7 +102,7 @@ def get_stations(location_name):
     all_locations = pd.DataFrame(api.get_places(location_name)['places'])[['id', 'name', 'type', 'canton', 'centroid']]
     # only keep the coordinates of the centroid
     all_locations['centroid'] = all_locations['centroid'].apply(lambda x: x['coordinates'])
-    return all_locations[all_locations['type'] == 'StopPlace']
+    return all_locations
 
 def get_station_id(station):
     return station["id"]
