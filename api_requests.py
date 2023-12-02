@@ -10,6 +10,8 @@ SCOPE = "c11fa6b1-edab-4554-a43d-8ab71b016325/.default"
 TRIPS_URL = API_URL + "/v3/trips/by-origin-destination"
 NEARBY_PLACES_URL = API_URL + "/v3/places/by-coordinates-geojson"
 TRANSPORTS_FROM_ID_URL = API_URL + "/v3/vehicle-journeys/by-departure/"
+trips_url = API_URL + "/v3/trips/by-origin-destination"
+station_url = API_URL + "/v3/places"
 
 def get_token():
     params = {
@@ -46,3 +48,13 @@ def get_nearby_places(longitude, latitude, radius, limit, type, includeVehicleMo
 
 def get_place_from_id(id):
     return requests.get(TRANSPORTS_FROM_ID_URL+id, headers={"Authorization": "Bearer " + token}).json()
+    return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
+
+def get_places(nameMatch):
+    request_body = {
+        "nameMatch": nameMatch}
+    return requests.get(station_url, params=request_body, headers={"Authorization": "Bearer " + token}).json()
+
+def get_platform_floor(station, platform):
+    platform_floor_url = API_URL + "v1/master-data/stations/{}/platforms/{}/platform-info".format(station, platform)
+    return requests.get(platform_floor_url, headers={"Authorization": "Bearer " + token}).json()

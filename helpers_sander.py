@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
+import api_requests as api
 import os
 import api_requests as api
 
@@ -22,6 +24,7 @@ def string_to_actual_time(result):
     # Get total time in minutes
     return hours_nb*60 + minutes_nb
 
+#Plus utile depuis que get_trips_infos existe
 def trip_durations(trips):
     return [string_to_actual_time(trip["duration"]) for trip in trips]
 
@@ -63,3 +66,43 @@ def is_applicable(position, waiting_time_threshold):
     # Return applicability
     # Applicable only if the waiting time is too big and there is no train station in close proximity
     return average_waiting_time > waiting_time_threshold and train_station is None
+def departure_to_time(trip):
+    """Returns the departure time of a trip"""
+    departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
+    departure = departure.replace(tzinfo=None)
+    return departure
+
+#Plus utile depuis que get_trips_infos existe
+def get_departures_times(trips):
+    return [departure_to_time(trip) for trip in trips]
+
+def get_trips_infos(journey):
+    res = []
+    for trip in journey['trips']:
+        numberStops = 0
+        for leg in trip['legs']:
+            for stop_point in leg['serviceJourney']['stopPoints']:
+                if stop_point['place']['type'] == 'StopPlace':
+                    numberStops += 1 
+        
+        departure_time = departure_to_time(trip)
+        duration = string_to_actual_time(trip['duration'])
+        
+        res.append({'id' : trip['id'], 'departune_time':departure_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'TotNumberStops': numberStops })
+    return res
+
+def get_stations(location_name):
+    """Extracts all stations associated with a location name
+    Args:
+        location_name (string): Name of the location (e.g. City)
+    Returns:
+        list: List of stations associated with the location name
+    """
+    all_locations = pd.DataFrame(api.get_places(location_name)['places'])[['id', 'name', 'type', 'canton', 'centroid']]
+    # only keep the coordinates of the centroid
+    all_locations['centroid'] = all_locations['centroid'].apply(lambda x: x['coordinates'])
+    return all_locations[all_locations['type'] == 'StopPlace']
+
+def get_station_id(station):
+    return station["id"]
