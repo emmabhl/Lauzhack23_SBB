@@ -8,6 +8,8 @@ SCOPE = "c11fa6b1-edab-4554-a43d-8ab71b016325/.default"
 
 # Others URLs
 trips_url = API_URL + "/v3/trips/by-origin-destination"
+station_url = API_URL + "/v3/places"
+
 
 def get_token():
     params = {
@@ -30,7 +32,9 @@ def get_journey(origin, destination, date, time):
         "date": date,
         "time": time,
     }
-
     return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
 
-
+def get_station(nameMatch):
+    request_body = {
+        "nameMatch": nameMatch}
+    return requests.get(station_url, params=request_body, headers={"Authorization": "Bearer " + token}).json()

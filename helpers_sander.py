@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from datetime import datetime
 import os
 
 def string_to_actual_time(result):
@@ -24,3 +25,13 @@ def string_to_actual_time(result):
 def trip_durations(trips):
     print([trip["duration"] for trip in trips])
     return [string_to_actual_time(trip["duration"]) for trip in trips]
+
+def departure_to_time(trip):
+    """Returns the departure time of a trip"""
+    departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
+    departure = departure.replace(tzinfo=None)
+    return departure
+
+def get_departures_times(trips):
+    return [departure_to_time(trip) for trip in trips]
