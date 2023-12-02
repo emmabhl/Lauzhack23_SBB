@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from datetime import datetime
+import api_requests as api
 import os
 
 def string_to_actual_time(result):
@@ -51,3 +52,18 @@ def get_trips_infos(journey):
         
         res.append({'id' : trip['id'], 'departune_time':departure_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'TotNumberStops': numberStops })
     return res
+
+def get_stations(location_name):
+    """Extracts all stations associated with a location name
+    Args:
+        location_name (string): Name of the location (e.g. City)
+    Returns:
+        list: List of stations associated with the location name
+    """
+    all_locations = pd.DataFrame(api.get_places(location_name)['places'])[['id', 'name', 'type', 'canton', 'centroid']]
+    # only keep the coordinates of the centroid
+    all_locations['centroid'] = all_locations['centroid'].apply(lambda x: x['coordinates'])
+    return all_locations[all_locations['type'] == 'StopPlace']
+
+def get_station_id(station):
+    return station["id"]
