@@ -54,7 +54,7 @@ def is_applicable(position, waiting_time_threshold):
     """
 
     # Get the nearby public transport places in a 1km radius
-    nearby_places = api.get_nearby_places(longitude=position[0], latitude=position[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=True)
+    nearby_places = api.get_nearby_places(longitude=position[0], latitude=position[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
     # For each place get the number of vehicle journeys
     number_journeys = [len(api.get_place_from_id(place["id"])["departures"]) for place in nearby_places["places"] if "departures" in api.get_place_from_id(place["id"]).keys()]
     # Compute the average waiting time (assuming each public transport comes every 30mins on average)
@@ -65,21 +65,7 @@ def is_applicable(position, waiting_time_threshold):
     train_station = get_closest_train_station(nearby_places)
     # Return applicability
     # Applicable only if the waiting time is too big and there is no train station in close proximity
-    if average_waiting_time > waiting_time_threshold :
-        print(f"Waiting time too big. Average waiting time is {round(average_waiting_time,2)} mins and threshold is {waiting_time_threshold} mins.")
-    else:
-        print(f"Waiting time is small enough. Average waiting time is {round(average_waiting_time,2)} mins and threshold is {waiting_time_threshold} mins.")
-    if train_station is None:
-        print(f"There is no train station in a 1km radius.")
-    else:
-        print("There is a train station within 1km, in fact it is at", train_station["distanceToSearchPosition"], "m from the starting point.")
-    if average_waiting_time < waiting_time_threshold or train_station is not None:
-        print("Therefore, it is not applicable here !")
-    else:
-        print("Therefore, it is applicable here !")
     return average_waiting_time > waiting_time_threshold and train_station is None
-
-
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
     departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
