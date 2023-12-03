@@ -269,7 +269,7 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
     for station_arr_id in nrst_arr_stations:
         for station_dep_id in nrst_dep_stations:
-            journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
+            journey = api.get_journey(origin=str(station_dep_id), destination = str(station_arr_id), date = date, time = time)
             infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):
