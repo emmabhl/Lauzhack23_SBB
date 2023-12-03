@@ -5,6 +5,7 @@ import api_requests as api
 import geocoder
 import pandas as pd
 import numpy as np
+from run_function import *
 
 api.use_token()
 
@@ -73,7 +74,7 @@ if(origin==None or destination==None or day==None or t==None ): st.write(':red[S
 elif(result==None): st.write(':blue[Calculation on going, please wait]')
 else:
     #test dataframe
-    result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
+    """result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
     result['Journey_nbr']= [1,1,2]
     result['Departure']=['A','B','C']
     result['Arrival']=['B','C', 'D']
@@ -81,7 +82,9 @@ else:
     result['Time_arrival']=['9:30', '10:20','11:10']
     result['Journey_duration']=[30,20,10]
     result['Transport_mode']=['Train', 'Car', 'Foot']
-    result['Tot_nbr_stages']=[3,3,3]
+    result['Tot_nbr_stages']=[3,3,3]"""
+
+    result=run(data_user)
 
 
     #display the result
