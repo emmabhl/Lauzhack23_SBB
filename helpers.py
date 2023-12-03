@@ -6,7 +6,6 @@ from datetime import datetime
 import api_requests as api
 import os
 import api_requests as api
-import math
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -55,7 +54,7 @@ def is_applicable(position, waiting_time_threshold):
     """
 
     # Get the nearby public transport places in a 1km radius
-    nearby_places = api.get_nearby_places(longitude=position[0], latitude=position[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=True)
+    nearby_places = api.get_nearby_places(longitude=position[0], latitude=position[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
     # For each place get the number of vehicle journeys
     number_journeys = [len(api.get_place_from_id(place["id"])["departures"]) for place in nearby_places["places"] if "departures" in api.get_place_from_id(place["id"]).keys()]
     # Compute the average waiting time (assuming each public transport comes every 30mins on average)
@@ -66,21 +65,7 @@ def is_applicable(position, waiting_time_threshold):
     train_station = get_closest_train_station(nearby_places)
     # Return applicability
     # Applicable only if the waiting time is too big and there is no train station in close proximity
-    if average_waiting_time > waiting_time_threshold :
-        print(f"Waiting time too big. Average waiting time is {round(average_waiting_time,2)} mins and threshold is {waiting_time_threshold} mins.")
-    else:
-        print(f"Waiting time is small enough. Average waiting time is {round(average_waiting_time,2)} mins and threshold is {waiting_time_threshold} mins.")
-    if train_station is None:
-        print(f"There is no train station in a 1km radius.")
-    else:
-        print("There is a train station within 1km, in fact it is at", train_station["distanceToSearchPosition"], "m from the starting point.")
-    if average_waiting_time < waiting_time_threshold or train_station is not None:
-        print("Therefore, it is not applicable here !")
-    else:
-        print("Therefore, it is applicable here !")
     return average_waiting_time > waiting_time_threshold and train_station is None
-
-
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
     departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
@@ -122,44 +107,18 @@ def get_stations(location_name):
 def get_station_id(station):
     return station["id"]
 
-def getDistanceFromLatLonInKm(lon1,lat1,lon2,lat2):
+def get_platform_coordinates(station_id, platform, sector= None):
+    """Extracts coordinates of a given platform of a given station
+    Args:
+        station_id (string): ID of the station
+        platform (int): number of the platform
+        sector (string): optional, name of the sector(s) (eg. 'A' or 'A,B')
+    Returns:
+        list: coordinates vector of platform centroid (midpoint of the sectors) or of the station of no information of the station's is provided in the dataset
     """
-    This function calculates the distance between 2 points according to their decimal angles.
-    """
-    R = 6371 # Radius of the earth in km
-    dLat = deg2rad(lat2-lat1) 
-    dLon = deg2rad(lon2-lon1)
-    a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(deg2rad(lat1)) * math.cos(deg2rad(lat2)) * math.sin(dLon/2) * math.sin(dLon/2)
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-    d = R * c # Distance in km
-    return d
+    features = api.get_platform_features(int(station_id), platform, sector)
 
-def deg2rad(deg):
-    return deg * (math.pi/180)
-
-def train_station_from_park_coords(park_coords):
-    nearby_places = api.get_nearby_places(longitude=park_coords[0], latitude=park_coords[1], radius=1500, type="StopPlace", limit=50, includeVehicleModes=True)
-    train_stations = get_train_stations(nearby_places)
-    return [station["id"] for station in train_stations]
-
-def divide_strings(full_string):
-    if isinstance(full_string, float):
-        return float
+    if np.isin('status', list(features.keys())) and (features['status'] == 400):
+        return api.get_stopplaces_by_id(station_id)['centroid']['coordinates']
     else:
-        return full_string.split("/")[1:]
-
-def get_closest_train_stations_from_departure(departure_coords):
-    """
-    Get the identifiers of the 5 train stations that have a parking next to them and that are 
-    closest to the departure point.
-    """
-    # Fetch mobilitat dataframe
-    mobilitat_df_with_closest_stations = pd.read_csv("mobilitat_df_with_closest_stations.csv", index_col = 0)
-    mobilitat_df_with_closest_stations["train_station_ids"] = mobilitat_df_with_closest_stations.apply(lambda x : divide_strings(x["train_station_ids"]), axis = 1)
-    mobilitat_df_with_closest_stations
-    # Get distances to all parkings
-    distances_park = mobilitat_df_with_closest_stations.apply(lambda x : getDistanceFromLatLonInKm(departure_coords[0],departure_coords[1],x["geopos.lon"],x["geopos.lat"]), axis = 1).values
-    # Get indexes of 5 closest parkings
-    park_indexes = distances_park.argsort()[:5]
-    # Get identifiers of 5 closest stations 
-    return np.array([mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]).flatten()[0:5]
+        return features['features'][0]['geometry']['coordinates']

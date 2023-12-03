@@ -1,8 +1,7 @@
 import requests
 
-# URLs and associated keys
 SERVICE_URL = "https://journey-service-int.api.sbb.ch:443"
-
+JOURNEY_MAP_URL= "https://journey-maps.api.sbb.ch/"
 TOKEN_URL = "https://login.microsoftonline.com/2cda5d11-f0ac-46b3-967d-af1b2e1bd01a/oauth2/v2.0/token"
 CLIENT_SECRET = "MU48Q~IuD6Iawz3QfvkmMiKHtfXBf-ffKoKTJdt5"
 CLIENT_ID = "f132a280-1571-4137-86d7-201641098ce8"
@@ -15,12 +14,12 @@ JOURNEY_KEY = "bf9e3a88ab8101ba22ba8c752bbbcfd8"
 TRIPS_URL = SERVICE_URL + "/v3/trips/by-origin-destination"
 NEARBY_PLACES_URL = SERVICE_URL + "/v3/places/by-coordinates-geojson"
 TRANSPORTS_FROM_ID_URL = SERVICE_URL + "/v3/vehicle-journeys/by-departure/"
-TRIPS_URL = SERVICE_URL + "/v3/trips/by-origin-destination"
+
 STATION_URL = SERVICE_URL + "/v3/places"
+stop_places_url = SERVICE_URL + "/v3/stop-places/"
+
 
 FOOTPATH_URL = JOURNEY_URL + "/v1/journey"
-
-
 
 def get_token():
     params = {
@@ -64,16 +63,15 @@ def get_places(nameMatch):
         "nameMatch": nameMatch}
     return requests.get(STATION_URL, params=request_body, headers={"Authorization": "Bearer " + token}).json()
 
-def get_platform_floor(station, platform):
-    platform_floor_url = SERVICE_URL + "v1/master-data/stations/{}/platforms/{}/platform-info".format(station, platform)
-    return requests.get(platform_floor_url, headers={"Authorization": "Bearer " + token}).json()
+def get_stopplaces_by_id(id):
+    return requests.get(stop_places_url+id, headers={"Authorization": "Bearer " + token}).json()
 
-def get_footpath(origin, station, platform):
-    params = {
-        "origin": origin,
-        "station": station,
-        "platform": platform,
-        "key": JOURNEY_KEY
+def get_header_journey_map():
+    return {'X-API-Key': 'bf9e3a88ab8101ba22ba8c752bbbcfd8'}
+
+def get_platform_features(station, platform, sector = None):
+    platform_floor_url = JOURNEY_MAP_URL + f"v1/master-data/stations/{station}/platforms/{platform}/midpoint"
+    request_body = {
+        'sectors': sector
     }
-    return requests.get(FOOTPATH_URL, params=params).json()
-    
+    return requests.get(platform_floor_url, params = request_body, headers= get_header_journey_map()).json()
