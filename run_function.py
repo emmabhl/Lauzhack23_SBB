@@ -39,10 +39,10 @@ def run(data_user):
     print(df)
 
     if by == 'CAR':
-        station_name = df.groupby(trip['Departure'][0]
-
+        station_names = df.groupby('Journey_nbr').head(1).Departure
 
         for trip in df:
+            station_name = station_names[station_names.loc(trip.Journey_nbr)]
             station_id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
             closest_parking = get_parking_closest_to_station_with_name(station_name)
             driving_time = get_drive_time_to_parking(origin, closest_parking)
