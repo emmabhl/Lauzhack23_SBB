@@ -1,17 +1,26 @@
 import requests
 
-API_URL = "https://journey-service-int.api.sbb.ch:443"
+# URLs and associated keys
+SERVICE_URL = "https://journey-service-int.api.sbb.ch:443"
+
 TOKEN_URL = "https://login.microsoftonline.com/2cda5d11-f0ac-46b3-967d-af1b2e1bd01a/oauth2/v2.0/token"
 CLIENT_SECRET = "MU48Q~IuD6Iawz3QfvkmMiKHtfXBf-ffKoKTJdt5"
 CLIENT_ID = "f132a280-1571-4137-86d7-201641098ce8"
 SCOPE = "c11fa6b1-edab-4554-a43d-8ab71b016325/.default"
 
+JOURNEY_URL = "https://journey-maps.api.sbb.ch" 
+JOURNEY_KEY = "bf9e3a88ab8101ba22ba8c752bbbcfd8"
+
 # Others URLs
-TRIPS_URL = API_URL + "/v3/trips/by-origin-destination"
-NEARBY_PLACES_URL = API_URL + "/v3/places/by-coordinates-geojson"
-TRANSPORTS_FROM_ID_URL = API_URL + "/v3/vehicle-journeys/by-departure/"
-trips_url = API_URL + "/v3/trips/by-origin-destination"
-station_url = API_URL + "/v3/places"
+TRIPS_URL = SERVICE_URL + "/v3/trips/by-origin-destination"
+NEARBY_PLACES_URL = SERVICE_URL + "/v3/places/by-coordinates-geojson"
+TRANSPORTS_FROM_ID_URL = SERVICE_URL + "/v3/vehicle-journeys/by-departure/"
+TRIPS_URL = SERVICE_URL + "/v3/trips/by-origin-destination"
+STATION_URL = SERVICE_URL + "/v3/places"
+
+FOOTPATH_URL = JOURNEY_URL + "/v1/journey"
+
+
 
 def get_token():
     params = {
@@ -48,13 +57,23 @@ def get_nearby_places(longitude, latitude, radius, limit, type, includeVehicleMo
 
 def get_place_from_id(id):
     return requests.get(TRANSPORTS_FROM_ID_URL+id, headers={"Authorization": "Bearer " + token}).json()
-    return requests.post(trips_url, json=request_body, headers={"Authorization": "Bearer " + token}).json()
+    return requests.post(TRIPS_URL, json=request_body, headers={"Authorization": "Bearer " + token}).json()
 
 def get_places(nameMatch):
     request_body = {
         "nameMatch": nameMatch}
-    return requests.get(station_url, params=request_body, headers={"Authorization": "Bearer " + token}).json()
+    return requests.get(STATION_URL, params=request_body, headers={"Authorization": "Bearer " + token}).json()
 
 def get_platform_floor(station, platform):
-    platform_floor_url = API_URL + "v1/master-data/stations/{}/platforms/{}/platform-info".format(station, platform)
+    platform_floor_url = SERVICE_URL + "v1/master-data/stations/{}/platforms/{}/platform-info".format(station, platform)
     return requests.get(platform_floor_url, headers={"Authorization": "Bearer " + token}).json()
+
+def get_footpath(origin, station, platform):
+    params = {
+        "origin": origin,
+        "station": station,
+        "platform": platform,
+        "key": JOURNEY_KEY
+    }
+    return requests.get(FOOTPATH_URL, params=params).json()
+    
