@@ -286,8 +286,10 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     if mode_to_departure == 'CAR':
         nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
     elif mode_to_departure == 'FOOT':
-        nrst_dep_stations = get_ids_of_places(api.get_nearby_places(current_coord[0], current_coord[1], radius=1500, 
-                                                                    type="StopPlace", limit=5, includeVehicleModes=False))
+        places = api.get_nearby_places(current_coord[0], current_coord[1], radius=1500, 
+                                                                    type="StopPlace", limit=5, includeVehicleModes=False)
+        print(places)
+        nrst_dep_stations = get_ids_of_places(places)
     
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
                                                                 type="StopPlace", limit=5, includeVehicleModes=False))
