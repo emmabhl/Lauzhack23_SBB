@@ -1,10 +1,11 @@
 import streamlit as st
-import datetime
+import datetime as dt
 import helpers as hlp
 import api_requests as api
 import geocoder
 import pandas as pd
 import numpy as np
+from run_function import *
 
 api.use_token()
 
@@ -45,7 +46,7 @@ elif(current_pos_destintation=='No'):
 
 
 day = st.date_input('Departune day')
-t = st.time_input('Departune time', key=datetime.datetime.now())
+t = st.time_input('Departune time', key=dt.datetime.now())
 
 st.write('Which transport type would you like to use?')
 col1, col2, col3 = st.columns(3)
@@ -58,7 +59,7 @@ metro_tram = col3.checkbox('Tramway/Metro', value=True)
 funicular_cog_railway = col1.checkbox('Cableway/Cog railway', value=True)
 
 #Store data in a dictionnary
-data_user = {'origin':origin, 'destination':destination, 'departune_day':day, 'departune_time':t,
+data_user = {'origin':origin, 'destination':destination, 'departure_day':day, 'departure_time':t,
              'transport_mean':{'TRAIN':train,'BUS':bus, 'FOOT':foot, 'CAR':car, 'SHIP':boat, 
                                'TRAMWAY':metro_tram,'CABLEWAY':funicular_cog_railway, }}
 
@@ -73,7 +74,7 @@ if(origin==None or destination==None or day==None or t==None ): st.write(':red[S
 elif(result==None): st.write(':blue[Calculation on going, please wait]')
 else:
     #test dataframe
-    result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
+    """result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
     result['Journey_nbr']= [1,1,2]
     result['Departure']=['A','B','C']
     result['Arrival']=['B','C', 'D']
@@ -81,7 +82,9 @@ else:
     result['Time_arrival']=['9:30', '10:20','11:10']
     result['Journey_duration']=[30,20,10]
     result['Transport_mode']=['Train', 'Car', 'Foot']
-    result['Tot_nbr_stages']=[3,3,3]
+    result['Tot_nbr_stages']=[3,3,3]"""
+
+    result=run(data_user)
 
 
     #display the result
