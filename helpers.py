@@ -156,7 +156,8 @@ def get_closest_train_stations_from_departure(departure_coords):
     # Get indexes of 5 closest parkings
     park_indexes = distances_park.argsort()[:5]
     # Get identifiers of 5 closest stations 
-    return np.array([mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]).flatten()[0:5]
+    weird_list = [mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]
+    return (weird_list[0]+weird_list[1]+weird_list[2]+weird_list[3]+weird_list[4])[0:5]
 
 
 def get_platform_coordinates(station_id, platform, sector= None):
