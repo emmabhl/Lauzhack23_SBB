@@ -135,6 +135,28 @@ def get_trips_infos(journey):
                     'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'departure_times_leg':legs_start_time, 'arrival_times_leg':legs_end_time, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
 
+def convert_infos_to_dataframe(infos = None, df = None):
+
+    """Converts result of get_trips_infos into dataframe
+        ARG =  either provide the result of get_trips_infos, or the simple conversion to pandas dataframe"""
+
+    if (df == None) and (infos != None):
+        df = pd.json_normalize(infos, meta = list(infos[0].keys()))
+    else:
+        raise ValueError("Please provide at least one of infos or df")
+
+    df = df.explode(['modes', 'start_of_legs', 'end_of_legs', 'departure_times_leg', 'arrival_times_leg'])
+    df = df.drop(columns = ['id', 'stopPlaces', 'TotNumberStops', 'departure_time', 'arrival_time'])
+    df['journey_nb'] = df.index.values + 1
+
+    columns = ['journey_nb', 'start_of_legs', 'end_of_legs', 'departure_times_leg', 'arrival_times_leg', 'duration', 'numberLegs', 'modes']
+
+    df = df[columns]
+    new_columns = {'journey_nb': 'Journey_nbr', 'start_of_legs': 'Departure', 'end_of_legs': 'Arrival', 'departure_times_leg': 'Time_departure', 'arrival_times_leg': 'Time_arrival', 'duration': 'Journey_duration', 'numberLegs': 'Tot_nbr_stages', 'modes':'Transport_mode'}
+
+    df.rename(columns=new_columns, inplace=True)
+    return df
+
 #def info_trips_to_data_frame(info_journey):
 
 def get_stations(location_name):
@@ -269,7 +291,7 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
     for station_arr_id in nrst_arr_stations:
         for station_dep_id in nrst_dep_stations:
-            journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
+            journey = api.get_journey(origin=str(station_dep_id), destination = str(station_arr_id), date = date, time = time)
             infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):
