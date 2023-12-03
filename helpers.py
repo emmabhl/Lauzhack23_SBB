@@ -177,8 +177,8 @@ def get_platform_coordinates(station_id, platform, sector= None):
 
 def remove_trips(current_coord, arrival_coord, date, time):
 
-    nrst_dep_stations = get_nearest_stations_id(current_coord)
-    nrst_arr_stations = get_nearest_stations_id(arrival_coord)
+    nrst_dep_stations = get_closest_train_stations_from_departure(current_coord)
+    nrst_arr_stations = get_closest_train_stations_from_departure(arrival_coord)
     #nearest stations are a lists of IDs
 
     # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
