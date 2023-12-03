@@ -157,7 +157,7 @@ def train_station_from_park_coords(park_coords):
 
 def divide_strings(full_string):
     if isinstance(full_string, float):
-        return float
+        return []
     else:
         return full_string.split("/")[1:]
 
@@ -169,7 +169,6 @@ def get_closest_train_stations_from_departure_by_car(departure_coords):
     # Fetch mobilitat dataframe
     mobilitat_df_with_closest_stations = pd.read_csv("mobilitat_df_with_closest_stations.csv", index_col = 0)
     mobilitat_df_with_closest_stations["train_station_ids"] = mobilitat_df_with_closest_stations.apply(lambda x : divide_strings(x["train_station_ids"]), axis = 1)
-    mobilitat_df_with_closest_stations
     # Get distances to all parkings
     distances_park = mobilitat_df_with_closest_stations.apply(lambda x : getDistanceFromLatLonInKm(departure_coords[0],departure_coords[1],x["geopos.lon"],x["geopos.lat"]), axis = 1).values
     # Get indexes of 5 closest parkings
@@ -178,6 +177,25 @@ def get_closest_train_stations_from_departure_by_car(departure_coords):
     weird_list = [mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]
     return (weird_list[0]+weird_list[1]+weird_list[2]+weird_list[3]+weird_list[4])[0:5]
 
+def get_coords(id, x):
+    if id in x["train_station_ids"] :
+        return ([x["geopos.lon"], x["geopos.lat"]]) 
+
+def get_closest_train_park_coords(ids):
+    """
+    Gets the position of the parkings associated to the train stations with the given identifiers.
+    """
+    # Fetch mobilitat dataframe
+    mobilitat_df_with_closest_stations = pd.read_csv("mobilitat_df_with_closest_stations.csv", index_col = 0)
+    mobilitat_df_with_closest_stations["train_station_ids"] = mobilitat_df_with_closest_stations.apply(lambda x : divide_strings(x["train_station_ids"]), axis = 1)
+    # Get coordinates of parkings
+    closest_train_park_coords = []
+    for id in ids:
+        for row in mobilitat_df_with_closest_stations.apply(lambda x : get_coords(id, x), axis = 1):
+            if row is not None:
+                closest_train_park_coords.append(row)
+                break
+    return closest_train_park_coords
 
 def get_platform_coordinates(station_id, platform, sector= None):
     """Extracts coordinates of a given platform of a given station
