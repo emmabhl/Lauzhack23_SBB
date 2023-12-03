@@ -104,7 +104,7 @@ for n in  range (nbr_journey_tot):
     button_name ='Departure: ' + departure_spot +' ------ Arrival: ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',   Stages number :' + str(trips.iloc[0]['Tot_nbr_stages']) + ',   Price:' + str(trips.iloc[0]['Tot_price']) 
 
 
-if st.button(button_name):
-    st.write(result)
-    
+    if st.button(button_name):
+        st.write(result)
+
 
