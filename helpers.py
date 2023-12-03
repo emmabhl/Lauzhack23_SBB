@@ -70,13 +70,6 @@ def is_applicable(position, waiting_time_threshold):
     # Applicable only if the waiting time is too big and there is no train station in close proximity
     return average_waiting_time > waiting_time_threshold and train_station is None
 
-def takes_car(origin):
-    # Get the nearby public transport places in a 1km radius
-    nearby_places = api.get_nearby_places(longitude=origin[0], latitude=origin[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
-    # Compute distance to closest trainstation
-    train_station = get_closest_train_station(nearby_places)
-    return train_station is None
-
 def departure_to_time(trip, leg_nb=0):
     """Returns the departure time of a trip"""
     if np.isin(trip['legs'][leg_nb]['mode'], LIST_TRANSPORT):
@@ -109,34 +102,15 @@ def get_departures_times(trips):
 
 def get_trips_infos(journey):
     res = []
-    # If journey is empty, return empty list
-    merde = False
-    if 'trips' not in journey.keys():
-        bordel = journey
-        merde = True
-    else :
-        bordel = journey['trips']
-
-    # if bordel is a string 
-    if len(bordel) == 0: #or isinstance(bordel, str):
-        return res
-    
-    for trip in bordel:
-        print(trip)
+    for trip in journey['trips']:
         stopPlaces = []
         legs_mode = []
         start_legs = []
         end_legs = []
         legs_start_time = []
         legs_end_time = []
-
-        if merde:
-            petit_bordel = trip[0]['legs']
-        else:
-            petit_bordel = trip['legs']
         
-        for i, leg in enumerate(petit_bordel):
-            
+        for i, leg in enumerate(trip['legs']):
             legs_mode.append(leg['mode'])
             legs_start_time.append(departure_to_time(trip, i))
             legs_end_time.append(arrival_to_time(trip, i))
@@ -318,10 +292,6 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     for station_arr_id in nrst_arr_stations:
         for station_dep_id in nrst_dep_stations:
             journey = api.get_journey(origin=str(station_dep_id), destination = str(station_arr_id), date = date, time = time)
-            
-            # If journey is empty, skip
-            if len(journey['trips']) == 0:
-                continue
             infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):
