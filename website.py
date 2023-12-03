@@ -82,7 +82,6 @@ else:
     result['Journey_duration']=[30,20,10]
     result['Transport_mode']=['Train', 'Car', 'Foot']
     result['Tot_nbr_stages']=[3,3,3]
-    result['Tot_price']=[10,10,10]
 
 
     #display the result
@@ -105,7 +104,7 @@ else:
         for i in range (len(trips['Transport_mode'])):
             list_transport.append(trips['Transport_mode'].iloc[i].values[0])
         all_transport.append(list_transport)
-        button_name ='From ' + departure_spot +' to ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',  ' + str(trips.iloc[0]['Tot_nbr_stages']) + ' stages.   Price:' + str(trips.iloc[0]['Tot_price'])+' CHF' 
+        button_name ='From ' + departure_spot +' to ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',  ' + str(trips.iloc[0]['Tot_nbr_stages']) + ' stages.' 
         button_names.append(button_name)
     
     for n, value in enumerate (button_names):
