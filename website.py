@@ -13,6 +13,7 @@ st.title('Your journey')
 #to avoid errors in storing data which is not yet defined
 origin = None
 destination = None
+result=None
 
 current_pos=st.selectbox('Do you want to start from your current position?', ('Choose an option', 'Yes', 'No'))
 if (current_pos=='Yes'): 
@@ -67,12 +68,11 @@ st.markdown("""---""")
 #Run notre algo
 
 
-#st.button("Reset we pwjjn deJD O R  RR   n ef  nnrqj a fNWdMKWH W WEKW FLkdnekWRPJQK FSFJw lJN", type="primary")
 #display the results
 
 #test dataframe
 result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
-result['Journey_nbr']= [1,1,1]
+result['Journey_nbr']= [1,1,2]
 result['Departure']=['A','B','C']
 result['Arrival']=['B','C', 'D']
 result['Time_departure']=['9:00', '10:00','11:00']
@@ -85,8 +85,11 @@ result['Tot_price']=[10,10,10]
 
 #display the result
 nbr_journey_tot = np.max(result['Journey_nbr'])
+all_trips=[]
+button_names=[]
 for n in  range (nbr_journey_tot):
     trips = result.iloc[np.where(result['Journey_nbr'] == (n+1))[0]]
+    all_trips.append(trips)
 
     m = len(trips['Journey_nbr'])
     departure_time_journey=trips.iloc[0]['Time_departure']
@@ -97,14 +100,15 @@ for n in  range (nbr_journey_tot):
     duration = 0
 
     list_transport=[]
-    for i in range (len(result['Transport_mode'])):
-        list_transport.append(result['Transport_mode'].loc[i].values[0])
-
+    for i in range (len(trips['Transport_mode'])):
+        list_transport.append(trips['Transport_mode'].iloc[i].values[0])
+    button_name ='From' + departure_spot +' to ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',  ' + str(trips.iloc[0]['Tot_nbr_stages']) + ' stages.   Price:' + str(trips.iloc[0]['Tot_price'])+' CHF' 
+    button_names.append(button_name)
     
-    button_name ='Departure: ' + departure_spot +' ------ Arrival: ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',   Stages number :' + str(trips.iloc[0]['Tot_nbr_stages']) + ',   Price:' + str(trips.iloc[0]['Tot_price']) 
+for n, value in enumerate (button_names):
+    if st.button(value):
+        st.dataframe((all_trips[n][[ 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode']]).reset_index(drop=True), width=1500)
 
 
-    if st.button(button_name):
-        st.write(result)
-
+        
 
