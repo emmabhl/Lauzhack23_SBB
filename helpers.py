@@ -75,18 +75,22 @@ def departure_to_time(trip):
         departure = trip['legs'][0]['start']['timeAimed']
     else:
         print(trip['legs'][0]['mode'])
+        
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
 
 def arrival_to_time(trip):
     """Returns the arrival time of a trip"""
-    if trip['legs'][0]['mode'] == 'TRAIN':
-        arrival = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
-    elif trip['legs'][0]['mode'] == 'FOOT':
-        arrival = trip['legs'][0]['end']['timeAimed']
+
+    list_transport = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
+
+    if np.isin(trip['legs'][-1]['mode'], list_transport):
+        arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    elif trip['legs'][-1]['mode'] == 'FOOT':
+        arrival = trip['legs'][-1]['end']['timeAimed']
     else:
-        print(trip['legs'][0]['mode'])
+        print(trip['legs'][-1])
     arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
     arrival = arrival.replace(tzinfo=None)
     return arrival
@@ -213,7 +217,7 @@ def get_platform_coordinates(station_id, platform, sector= None):
     else:
         return features['features'][0]['geometry']['coordinates']
 
-def remove_trips(current_coord, arrival_coord, date, time):
+def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
 
     nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
