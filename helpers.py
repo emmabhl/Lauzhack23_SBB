@@ -69,28 +69,28 @@ def is_applicable(position, waiting_time_threshold):
     # Applicable only if the waiting time is too big and there is no train station in close proximity
     return average_waiting_time > waiting_time_threshold and train_station is None
 
-def departure_to_time(trip):
+def departure_to_time(trip, leg_nb=0):
     """Returns the departure time of a trip"""
-    if np.isin(trip['legs'][0]['mode'], LIST_TRANSPORT):
-        departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
-    elif trip['legs'][0]['mode'] == 'FOOT':
-        departure = trip['legs'][0]['start']['timeAimed']
+    if np.isin(trip['legs'][leg_nb]['mode'], LIST_TRANSPORT):
+        departure = trip['legs'][leg_nb]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    elif trip['legs'][leg_nb]['mode'] == 'FOOT':
+        departure = trip['legs'][leg_nb]['start']['timeAimed']
     else:
-        print(trip['legs'][0]['mode'])
+        print(trip['legs'][leg_nb]['mode'])
         
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
 
-def arrival_to_time(trip):
+def arrival_to_time(trip, leg_nb=-1):
     """Returns the arrival time of a trip"""
 
-    if np.isin(trip['legs'][-1]['mode'], LIST_TRANSPORT):
-        arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
-    elif trip['legs'][-1]['mode'] == 'FOOT':
-        arrival = trip['legs'][-1]['end']['timeAimed']
+    if np.isin(trip['legs'][leg_nb]['mode'], LIST_TRANSPORT):
+        arrival = trip['legs'][leg_nb]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    elif trip['legs'][leg_nb]['mode'] == 'FOOT':
+        arrival = trip['legs'][leg_nb]['end']['timeAimed']
     else:
-        print(trip['legs'][-1])
+        print(trip['legs'][leg_nb])
     arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
     arrival = arrival.replace(tzinfo=None)
     return arrival
@@ -106,8 +106,13 @@ def get_trips_infos(journey):
         legs_mode = []
         start_legs = []
         end_legs = []
-        for leg in trip['legs']:
+        legs_start_time = []
+        legs_end_time = []
+        
+        for i, leg in enumerate(trip['legs']):
             legs_mode.append(leg['mode'])
+            legs_start_time.append(departure_to_time(trip, i))
+            legs_end_time.append(departure_to_time(trip, i))
             if np.isin(legs_mode[-1], LIST_TRANSPORT):
                 start_legs.append(leg['serviceJourney']['stopPoints'][0]['place']['name'])
                 end_legs.append(leg['serviceJourney']['stopPoints'][-1]['place']['name'])
@@ -125,8 +130,11 @@ def get_trips_infos(journey):
         arrival_time = arrival_to_time(trip)
         duration = string_to_actual_time(trip['duration'])
         
-        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
+        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 
+                    'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
+
+#def info_trips_to_data_frame(info_journey):
 
 def get_stations(location_name):
     """Extracts all stations associated with a location name
