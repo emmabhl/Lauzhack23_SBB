@@ -70,6 +70,13 @@ def is_applicable(position, waiting_time_threshold):
     # Applicable only if the waiting time is too big and there is no train station in close proximity
     return average_waiting_time > waiting_time_threshold and train_station is None
 
+def takes_car(origin):
+    # Get the nearby public transport places in a 1km radius
+    nearby_places = api.get_nearby_places(longitude=origin[0], latitude=origin[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
+    # Compute distance to closest trainstation
+    train_station = get_closest_train_station(nearby_places)
+    return train_station is None
+
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
     if np.isin(trip['legs'][0]['mode'], LIST_TRANSPORT):
