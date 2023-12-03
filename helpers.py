@@ -113,7 +113,7 @@ def get_trips_infos(journey):
         for i, leg in enumerate(trip['legs']):
             legs_mode.append(leg['mode'])
             legs_start_time.append(departure_to_time(trip, i))
-            legs_end_time.append(departure_to_time(trip, i))
+            legs_end_time.append(arrival_to_time(trip, i))
             if np.isin(legs_mode[-1], LIST_TRANSPORT):
                 start_legs.append(leg['serviceJourney']['stopPoints'][0]['place']['name'])
                 end_legs.append(leg['serviceJourney']['stopPoints'][-1]['place']['name'])
@@ -132,7 +132,7 @@ def get_trips_infos(journey):
         duration = string_to_actual_time(trip['duration'])
         
         res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 
-                    'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
+                    'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'departure_times_leg':legs_start_time, 'arrival_times_leg':legs_end_time, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
 
 #def info_trips_to_data_frame(info_journey):
