@@ -100,6 +100,13 @@ def arrival_to_time(trip, leg_nb=-1):
 def get_departures_times(trips):
     return [departure_to_time(trip) for trip in trips]
 
+def takes_car(origin):
+    # Get the nearby public transport places in a 1km radius
+    nearby_places = api.get_nearby_places(longitude=origin[0], latitude=origin[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
+    # Compute distance to closest trainstation
+    train_station = get_closest_train_station(nearby_places)
+    return train_station is None
+
 def get_trips_infos(journey):
     res = []
     for trip in journey['trips']:
