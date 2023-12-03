@@ -69,14 +69,28 @@ def is_applicable(position, waiting_time_threshold):
 
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
-    departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    if trip['legs'][0]['mode'] == 'TRAIN':
+        departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    elif trip['legs'][0]['mode'] == 'FOOT':
+        departure = trip['legs'][0]['start']['timeAimed']
+    else:
+        print(trip['legs'][0]['mode'])
+        
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
 
 def arrival_to_time(trip):
     """Returns the arrival time of a trip"""
-    arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+
+    list_transport = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
+
+    if np.isin(trip['legs'][-1]['mode'], list_transport):
+        arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    elif trip['legs'][-1]['mode'] == 'FOOT':
+        arrival = trip['legs'][-1]['end']['timeAimed']
+    else:
+        print(trip['legs'][-1])
     arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
     arrival = arrival.replace(tzinfo=None)
     return arrival
@@ -90,15 +104,14 @@ def get_trips_infos(journey):
     for trip in journey['trips']:
         stopPlaces = []
         for leg in trip['legs']:
-            print(leg)
             if leg['mode'] == 'TRAIN':
                 for stop_point in leg['serviceJourney']['stopPoints']:
                     if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
                         stopPlaces.append(stop_point['place']['id'])
             elif leg['mode'] == 'FOOT':
-                for stop_point in leg['start']:
-                    if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
-                        stopPlaces.append(stop_point['place']['id'])
+                stop_point = leg['start']['place']
+                if (stop_point['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['id'] != stopPlaces[-1])):
+                    stopPlaces.append(stop_point['id'])
         
         departure_time = departure_to_time(trip)
         arrival_time = arrival_to_time(trip)
@@ -214,7 +227,7 @@ def get_walk_time_to_train_platform(closest_train_stations_ids, closest_train_pa
         walk_time_to_train_platform.append(math.ceil(dist_park_platform/5*60,)) # in minutes
     return walk_time_to_train_platform
 
-def remove_trips(current_coord, arrival_coord, date, time):
+def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
 
     nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
@@ -229,12 +242,13 @@ def remove_trips(current_coord, arrival_coord, date, time):
             journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
             infos = get_trips_infos(journey)
 
-            for trip in infos:
-                if np.isin(station_dep_id, trip['stopPlaces'].pop(0)) :
-                    idx = trip['id']
+            for idx, trip in enumerate(infos):
+                trip['stopPlaces'].pop(0)
+                trip['stopPlaces'].pop(-1)
+                if np.isin(station_dep_id, trip['stopPlaces']) :
                     journey['trips'].pop(idx)
-                if np.isin(station_arr_id, trip['stopPlaces'].pop(-1)) :
-                    idx = trip['id']
+
+                if np.isin(station_arr_id, trip['stopPlaces']) :
                     journey['trips'].pop(idx)
 
         journeys.append(journey)
