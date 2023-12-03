@@ -313,6 +313,12 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
         journeys.append(journey)
     return journeys
                     
+def get_parking_closest_to_station_with_name(station_name):
+    # Get the id of the station
+    id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
+    # Get the coordinates of the station
+    return get_closest_train_park_coords(ids=[id])
+
         
 
 
