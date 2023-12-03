@@ -90,9 +90,15 @@ def get_trips_infos(journey):
     for trip in journey['trips']:
         stopPlaces = []
         for leg in trip['legs']:
-            for stop_point in leg['serviceJourney']['stopPoints']:
-                if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
-                    stopPlaces.append(stop_point['place']['id'])
+            print(leg)
+            if leg['mode'] == 'TRAIN':
+                for stop_point in leg['serviceJourney']['stopPoints']:
+                    if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
+                        stopPlaces.append(stop_point['place']['id'])
+            elif leg['mode'] == 'FOOT':
+                for stop_point in leg['start']:
+                    if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
+                        stopPlaces.append(stop_point['place']['id'])
         
         departure_time = departure_to_time(trip)
         arrival_time = arrival_to_time(trip)
@@ -131,6 +137,10 @@ def getDistanceFromLatLonInKm(lon1,lat1,lon2,lat2):
 def deg2rad(deg):
     return deg * (math.pi/180)
 
+def get_ids_of_places(places):
+    df = pd.json_normalize(places['places'], meta = list(places['places'][0]))
+    return df['id'].values.tolist()
+
 def train_station_from_park_coords(park_coords):
     nearby_places = api.get_nearby_places(longitude=park_coords[0], latitude=park_coords[1], radius=1500, type="StopPlace", limit=50, includeVehicleModes=True)
     train_stations = get_train_stations(nearby_places)
@@ -142,7 +152,7 @@ def divide_strings(full_string):
     else:
         return full_string.split("/")[1:]
 
-def get_closest_train_stations_from_departure(departure_coords):
+def get_closest_train_stations_from_departure_by_car(departure_coords):
     """
     Get the identifiers of the 5 train stations that have a parking next to them and that are 
     closest to the departure point.
@@ -156,7 +166,8 @@ def get_closest_train_stations_from_departure(departure_coords):
     # Get indexes of 5 closest parkings
     park_indexes = distances_park.argsort()[:5]
     # Get identifiers of 5 closest stations 
-    return np.array([mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]).flatten()[0:5]
+    weird_list = [mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]
+    return (weird_list[0]+weird_list[1]+weird_list[2]+weird_list[3]+weird_list[4])[0:5]
 
 
 def get_platform_coordinates(station_id, platform, sector= None):
@@ -177,9 +188,12 @@ def get_platform_coordinates(station_id, platform, sector= None):
 
 def remove_trips(current_coord, arrival_coord, date, time):
 
-    nrst_dep_stations = get_nearest_stations_id(current_coord)
-    nrst_arr_stations = get_nearest_stations_id(arrival_coord)
+    nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
+    nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
+                                                                type="StopPlace", limit=5, includeVehicleModes=False))
     #nearest stations are a lists of IDs
+
+    journeys = []
 
     # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
     for station_arr_id in nrst_arr_stations:
@@ -188,9 +202,15 @@ def remove_trips(current_coord, arrival_coord, date, time):
             infos = get_trips_infos(journey)
 
             for trip in infos:
-                if np.isin(station_dep_id, trip['stopPlaces']) :
+                if np.isin(station_dep_id, trip['stopPlaces'].pop(0)) :
                     idx = trip['id']
                     journey['trips'].pop(idx)
+                if np.isin(station_arr_id, trip['stopPlaces'].pop(-1)) :
+                    idx = trip['id']
+                    journey['trips'].pop(idx)
+
+        journeys.append(journey)
+    return journeys
                     
         
 
