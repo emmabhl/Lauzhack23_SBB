@@ -8,7 +8,7 @@ import os
 import math
 import osm_helpers
 
-LIST_TRANSPORT = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
+LIST_TRANSPORT = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP", "METRO"]
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -77,28 +77,28 @@ def takes_car(origin):
     train_station = get_closest_train_station(nearby_places)
     return train_station is None
 
-def departure_to_time(trip):
+def departure_to_time(trip, leg_nb=0):
     """Returns the departure time of a trip"""
-    if np.isin(trip['legs'][0]['mode'], LIST_TRANSPORT):
-        departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
-    elif trip['legs'][0]['mode'] == 'FOOT':
-        departure = trip['legs'][0]['start']['timeAimed']
+    if np.isin(trip['legs'][leg_nb]['mode'], LIST_TRANSPORT):
+        departure = trip['legs'][leg_nb]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    elif trip['legs'][leg_nb]['mode'] == 'FOOT':
+        departure = trip['legs'][leg_nb]['start']['timeAimed']
     else:
-        print(trip['legs'][0]['mode'])
+        print(trip['legs'][leg_nb]['mode'])
         
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
 
-def arrival_to_time(trip):
+def arrival_to_time(trip, leg_nb=-1):
     """Returns the arrival time of a trip"""
 
-    if np.isin(trip['legs'][-1]['mode'], LIST_TRANSPORT):
-        arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
-    elif trip['legs'][-1]['mode'] == 'FOOT':
-        arrival = trip['legs'][-1]['end']['timeAimed']
+    if np.isin(trip['legs'][leg_nb]['mode'], LIST_TRANSPORT):
+        arrival = trip['legs'][leg_nb]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    elif trip['legs'][leg_nb]['mode'] == 'FOOT':
+        arrival = trip['legs'][leg_nb]['end']['timeAimed']
     else:
-        print(trip['legs'][-1])
+        print(trip['legs'][leg_nb])
     arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
     arrival = arrival.replace(tzinfo=None)
     return arrival
@@ -114,8 +114,13 @@ def get_trips_infos(journey):
         legs_mode = []
         start_legs = []
         end_legs = []
-        for leg in trip['legs']:
+        legs_start_time = []
+        legs_end_time = []
+        
+        for i, leg in enumerate(trip['legs']):
             legs_mode.append(leg['mode'])
+            legs_start_time.append(departure_to_time(trip, i))
+            legs_end_time.append(arrival_to_time(trip, i))
             if np.isin(legs_mode[-1], LIST_TRANSPORT):
                 start_legs.append(leg['serviceJourney']['stopPoints'][0]['place']['name'])
                 end_legs.append(leg['serviceJourney']['stopPoints'][-1]['place']['name'])
@@ -133,8 +138,33 @@ def get_trips_infos(journey):
         arrival_time = arrival_to_time(trip)
         duration = string_to_actual_time(trip['duration'])
         
-        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
+        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 
+                    'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'departure_times_leg':legs_start_time, 'arrival_times_leg':legs_end_time, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
+
+def convert_infos_to_dataframe(infos = None, df = None):
+
+    """Converts result of get_trips_infos into dataframe
+        ARG =  either provide the result of get_trips_infos, or the simple conversion to pandas dataframe"""
+
+    if (df == None) and (infos != None):
+        df = pd.json_normalize(infos, meta = list(infos[0].keys()))
+    else:
+        raise ValueError("Please provide at least one of infos or df")
+
+    df = df.explode(['modes', 'start_of_legs', 'end_of_legs', 'departure_times_leg', 'arrival_times_leg'])
+    df = df.drop(columns = ['id', 'stopPlaces', 'TotNumberStops', 'departure_time', 'arrival_time'])
+    df['journey_nb'] = df.index.values + 1
+
+    columns = ['journey_nb', 'start_of_legs', 'end_of_legs', 'departure_times_leg', 'arrival_times_leg', 'duration', 'numberLegs', 'modes']
+
+    df = df[columns]
+    new_columns = {'journey_nb': 'Journey_nbr', 'start_of_legs': 'Departure', 'end_of_legs': 'Arrival', 'departure_times_leg': 'Time_departure', 'arrival_times_leg': 'Time_arrival', 'duration': 'Journey_duration', 'numberLegs': 'Tot_nbr_stages', 'modes':'Transport_mode'}
+
+    df.rename(columns=new_columns, inplace=True)
+    return df
+
+#def info_trips_to_data_frame(info_journey):
 
 def get_stations(location_name):
     """Extracts all stations associated with a location name
@@ -253,7 +283,12 @@ def get_walk_time_to_train_platform(closest_train_stations_ids, closest_train_pa
 
 def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
 
-    nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
+    if mode_to_departure == 'CAR':
+        nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
+    elif mode_to_departure == 'FOOT':
+        nrst_dep_stations = get_ids_of_places(api.get_nearby_places(current_coord[0], current_coord[1], radius=1500, 
+                                                                    type="StopPlace", limit=5, includeVehicleModes=False))
+    
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
                                                                 type="StopPlace", limit=5, includeVehicleModes=False))
     #nearest stations are a lists of IDs
@@ -263,7 +298,7 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
     for station_arr_id in nrst_arr_stations:
         for station_dep_id in nrst_dep_stations:
-            journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
+            journey = api.get_journey(origin=str(station_dep_id), destination = str(station_arr_id), date = date, time = time)
             infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):

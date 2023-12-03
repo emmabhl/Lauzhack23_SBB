@@ -58,9 +58,9 @@ metro_tram = col3.checkbox('Tramway/Metro', value=True)
 funicular_cog_railway = col1.checkbox('Cableway/Cog railway', value=True)
 
 #Store data in a dictionnary
-data_user = {'origin':origin, 'destination':destination, 'departune_day':day, 'departune_time':t,
-             'transport_mean':{'train':train,'bus':bus, 'foot':foot, 'car':car, 'boat':boat, 
-                               'tramway/metro':metro_tram,'funicular_cog_railway':funicular_cog_railway, }}
+data_user = {'origin':origin, 'destination':destination, 'departure_day':day, 'departure_time':t,
+             'transport_mean':{'TRAIN':train,'BUS':bus, 'FOOT':foot, 'CAR':car, 'SHIP':boat, 
+                               'TRAMWAY':metro_tram,'CABLEWAY':funicular_cog_railway, }}
 
 
 st.markdown("""---""")
@@ -80,37 +80,35 @@ else:
     result['Time_departure']=['9:00', '10:00','11:00']
     result['Time_arrival']=['9:30', '10:20','11:10']
     result['Journey_duration']=[30,20,10]
-    result['Transport_mode']=['Train', 'Bus', 'Foot']
+    result['Transport_mode']=['Train', 'Car', 'Foot']
     result['Tot_nbr_stages']=[3,3,3]
-    result['Tot_price']=[10,10,10]
 
 
     #display the result
     nbr_journey_tot = np.max(result['Journey_nbr'])
     all_trips=[]
     button_names=[]
+    all_transport=[]
     for n in  range (nbr_journey_tot):
         trips = result.iloc[np.where(result['Journey_nbr'] == (n+1))[0]]
         all_trips.append(trips)
-
+        
         m = len(trips['Journey_nbr'])
         departure_time_journey=trips.iloc[0]['Time_departure']
         arrival_time_journey=trips.iloc[m-1]['Time_arrival']
         departure_spot= trips.iloc[0]['Departure']
         arrival_spot=trips.iloc[m-1]['Arrival']
-        #duration=arrival_time_journey-departure_time_journey
-        duration = 0
+        duration=trips['Journey_duration']
 
         list_transport=[]
         for i in range (len(trips['Transport_mode'])):
             list_transport.append(trips['Transport_mode'].iloc[i].values[0])
-        button_name ='From' + departure_spot +' to ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',  ' + str(trips.iloc[0]['Tot_nbr_stages']) + ' stages.   Price:' + str(trips.iloc[0]['Tot_price'])+' CHF' 
+        all_transport.append(list_transport)
+        button_name ='From ' + departure_spot +' to ' + arrival_spot + ',   ' + str(duration) +' hours,   transports: '+ str(list_transport) + ',  ' + str(trips.iloc[0]['Tot_nbr_stages']) + ' stages.' 
         button_names.append(button_name)
-        
+    
     for n, value in enumerate (button_names):
         if st.button(value):
             st.dataframe((all_trips[n][[ 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode']]).reset_index(drop=True), width=1500)
 
-
-            
-
+        
