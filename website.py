@@ -53,16 +53,14 @@ train = col1.checkbox('Train', value=True)
 bus = col2.checkbox('Bus', value=True)
 foot = col3.checkbox('Foot', value=True)
 car = col1.checkbox('Car', value=True)
-boat = col2.checkbox('Boat', value=True)
+boat = col2.checkbox('Ship', value=True)
 metro_tram = col3.checkbox('Tramway/Metro', value=True)
-funicular_cog_railway = col1.checkbox('Funicular/Cog railway', value=True)
-bike = col2.checkbox('Bike', value=True)
+funicular_cog_railway = col1.checkbox('Cableway/Cog railway', value=True)
 
 #Store data in a dictionnary
 data_user = {'origin':origin, 'destination':destination, 'departune_day':day, 'departune_time':t,
              'transport_mean':{'train':train,'bus':bus, 'foot':foot, 'car':car, 'boat':boat, 
-                               'tramway/metro':metro_tram,'funicular_cog_railway':funicular_cog_railway, 
-                               'bike':bike}}
+                               'tramway/metro':metro_tram,'funicular_cog_railway':funicular_cog_railway, }}
 
 
 st.markdown("""---""")
