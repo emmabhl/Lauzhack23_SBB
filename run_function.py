@@ -17,7 +17,13 @@ def run(data_user):
     else: 
         if takes_car(origin):
             trips = remove_trips(origin, destination, departure_day, departure_time, 'CAR')
-            trips = {'trips': np.array([journey['trips'] for journey in trips]).flatten()}
+            # flatten the trips 
+            all_journeys = {}
+            for trip in trips:
+                all_journeys += trip['trips']
+            trips = {'trips': all_journeys}
+
+
 
             for trip in trips:
                 station_name = trip['start_of_legs'][0]
