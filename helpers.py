@@ -5,7 +5,7 @@ import seaborn as sns
 from datetime import datetime
 import api_requests as api
 import os
-import api_requests as api
+import math
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -66,12 +66,20 @@ def is_applicable(position, waiting_time_threshold):
     # Return applicability
     # Applicable only if the waiting time is too big and there is no train station in close proximity
     return average_waiting_time > waiting_time_threshold and train_station is None
+
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
     departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
+
+def arrival_to_time(trip):
+    """Returns the arrival time of a trip"""
+    arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
+    arrival = arrival.replace(tzinfo=None)
+    return arrival
 
 #Plus utile depuis que get_trips_infos existe
 def get_departures_times(trips):
@@ -80,16 +88,17 @@ def get_departures_times(trips):
 def get_trips_infos(journey):
     res = []
     for trip in journey['trips']:
-        numberStops = 0
+        stopPlaces = []
         for leg in trip['legs']:
             for stop_point in leg['serviceJourney']['stopPoints']:
-                if stop_point['place']['type'] == 'StopPlace':
-                    numberStops += 1 
+                if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
+                    stopPlaces.append(stop_point['place']['id'])
         
         departure_time = departure_to_time(trip)
+        arrival_time = arrival_to_time(trip)
         duration = string_to_actual_time(trip['duration'])
         
-        res.append({'id' : trip['id'], 'departune_time':departure_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'TotNumberStops': numberStops })
+        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
 
 def get_stations(location_name):
@@ -107,6 +116,49 @@ def get_stations(location_name):
 def get_station_id(station):
     return station["id"]
 
+def getDistanceFromLatLonInKm(lon1,lat1,lon2,lat2):
+    """
+    This function calculates the distance between 2 points according to their decimal angles.
+    """
+    R = 6371 # Radius of the earth in km
+    dLat = deg2rad(lat2-lat1) 
+    dLon = deg2rad(lon2-lon1)
+    a = math.sin(dLat/2) * math.sin(dLat/2) + math.cos(deg2rad(lat1)) * math.cos(deg2rad(lat2)) * math.sin(dLon/2) * math.sin(dLon/2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    d = R * c # Distance in km
+    return d
+
+def deg2rad(deg):
+    return deg * (math.pi/180)
+
+def train_station_from_park_coords(park_coords):
+    nearby_places = api.get_nearby_places(longitude=park_coords[0], latitude=park_coords[1], radius=1500, type="StopPlace", limit=50, includeVehicleModes=True)
+    train_stations = get_train_stations(nearby_places)
+    return [station["id"] for station in train_stations]
+
+def divide_strings(full_string):
+    if isinstance(full_string, float):
+        return float
+    else:
+        return full_string.split("/")[1:]
+
+def get_closest_train_stations_from_departure(departure_coords):
+    """
+    Get the identifiers of the 5 train stations that have a parking next to them and that are 
+    closest to the departure point.
+    """
+    # Fetch mobilitat dataframe
+    mobilitat_df_with_closest_stations = pd.read_csv("mobilitat_df_with_closest_stations.csv", index_col = 0)
+    mobilitat_df_with_closest_stations["train_station_ids"] = mobilitat_df_with_closest_stations.apply(lambda x : divide_strings(x["train_station_ids"]), axis = 1)
+    mobilitat_df_with_closest_stations
+    # Get distances to all parkings
+    distances_park = mobilitat_df_with_closest_stations.apply(lambda x : getDistanceFromLatLonInKm(departure_coords[0],departure_coords[1],x["geopos.lon"],x["geopos.lat"]), axis = 1).values
+    # Get indexes of 5 closest parkings
+    park_indexes = distances_park.argsort()[:5]
+    # Get identifiers of 5 closest stations 
+    return np.array([mobilitat_df_with_closest_stations["train_station_ids"].values[idx] for idx in park_indexes]).flatten()[0:5]
+
+
 def get_platform_coordinates(station_id, platform, sector= None):
     """Extracts coordinates of a given platform of a given station
     Args:
@@ -122,3 +174,25 @@ def get_platform_coordinates(station_id, platform, sector= None):
         return api.get_stopplaces_by_id(station_id)['centroid']['coordinates']
     else:
         return features['features'][0]['geometry']['coordinates']
+
+def remove_trips(current_coord, arrival_coord, date, time):
+
+    nrst_dep_stations = get_nearest_stations_id(current_coord)
+    nrst_arr_stations = get_nearest_stations_id(arrival_coord)
+    #nearest stations are a lists of IDs
+
+    # if one of the trips proposed for each station proposes a stop by another of the nearest strations, rmove it
+    for station_arr_id in nrst_arr_stations:
+        for station_dep_id in nrst_dep_stations:
+            journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
+            infos = get_trips_infos(journey)
+
+            for trip in infos:
+                if np.isin(station_dep_id, trip['stopPlaces']) :
+                    idx = trip['id']
+                    journey['trips'].pop(idx)
+                    
+        
+
+
+
