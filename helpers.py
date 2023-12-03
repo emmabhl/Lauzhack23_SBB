@@ -102,15 +102,34 @@ def get_departures_times(trips):
 
 def get_trips_infos(journey):
     res = []
-    for trip in journey['trips']:
+    # If journey is empty, return empty list
+    merde = False
+    if 'trips' not in journey.keys():
+        bordel = journey
+        merde = True
+    else :
+        bordel = journey['trips']
+
+    # if bordel is a string 
+    if len(bordel) == 0: #or isinstance(bordel, str):
+        return res
+    
+    for trip in bordel:
+        print(trip)
         stopPlaces = []
         legs_mode = []
         start_legs = []
         end_legs = []
         legs_start_time = []
         legs_end_time = []
+
+        if merde:
+            petit_bordel = trip[0]['legs']
+        else:
+            petit_bordel = trip['legs']
         
-        for i, leg in enumerate(trip['legs']):
+        for i, leg in enumerate(petit_bordel):
+            
             legs_mode.append(leg['mode'])
             legs_start_time.append(departure_to_time(trip, i))
             legs_end_time.append(arrival_to_time(trip, i))
@@ -292,6 +311,10 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     for station_arr_id in nrst_arr_stations:
         for station_dep_id in nrst_dep_stations:
             journey = api.get_journey(origin=str(station_dep_id), destination = str(station_arr_id), date = date, time = time)
+            
+            # If journey is empty, skip
+            if len(journey['trips']) == 0:
+                continue
             infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):
