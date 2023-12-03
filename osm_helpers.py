@@ -45,6 +45,9 @@ def compute_all_travel_times():
     latitude_range = [45.4905, 47.4830]
     longitude_range = [5.5723, 10.2931]
 
+    latitude_range = [45.4905, 46.4906]
+    longitude_range = [5.5723, 6.5724]
+
     # Define the number of batches
     n_batches = 20
 
