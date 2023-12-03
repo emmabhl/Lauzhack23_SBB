@@ -6,6 +6,7 @@ from datetime import datetime
 import api_requests as api
 import os
 import math
+import osm_helpers
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -200,6 +201,14 @@ def get_closest_train_park_coords(ids):
                 closest_train_park_coords.append(row)
                 break
     return closest_train_park_coords
+
+def get_drive_time_to_parking(origin, closest_train_park_coords):
+    drive_time_to_parking = []
+    for coords in closest_train_park_coords:
+        start = {"longitude": origin[0], "latitude": origin[1]}
+        parking = {"longitude": coords[0], "latitude": coords[1]}
+        drive_time_to_parking.append(math.ceil(osm_helpers.get_itinerary_properties(start, parking)["duration"]/60))
+    return drive_time_to_parking
 
 def get_platform_coordinates(station_id, platform, sector= None):
     """Extracts coordinates of a given platform of a given station
