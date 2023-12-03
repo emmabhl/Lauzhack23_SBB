@@ -6,6 +6,9 @@ from datetime import datetime
 import api_requests as api
 import os
 import math
+import osm_helpers
+
+LIST_TRANSPORT = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -69,7 +72,7 @@ def is_applicable(position, waiting_time_threshold):
 
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
-    if trip['legs'][0]['mode'] == 'TRAIN':
+    if np.isin(trip['legs'][0]['mode'], LIST_TRANSPORT):
         departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
     elif trip['legs'][0]['mode'] == 'FOOT':
         departure = trip['legs'][0]['start']['timeAimed']
@@ -83,9 +86,7 @@ def departure_to_time(trip):
 def arrival_to_time(trip):
     """Returns the arrival time of a trip"""
 
-    list_transport = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
-
-    if np.isin(trip['legs'][-1]['mode'], list_transport):
+    if np.isin(trip['legs'][-1]['mode'], LIST_TRANSPORT):
         arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
     elif trip['legs'][-1]['mode'] == 'FOOT':
         arrival = trip['legs'][-1]['end']['timeAimed']
@@ -103,12 +104,20 @@ def get_trips_infos(journey):
     res = []
     for trip in journey['trips']:
         stopPlaces = []
+        legs_mode = []
+        start_legs = []
+        end_legs = []
         for leg in trip['legs']:
-            if leg['mode'] == 'TRAIN':
+            legs_mode.append(leg['mode'])
+            if np.isin(legs_mode[-1], LIST_TRANSPORT):
+                start_legs.append(leg['serviceJourney']['stopPoints'][0]['place']['name'])
+                end_legs.append(leg['serviceJourney']['stopPoints'][-1]['place']['name'])
                 for stop_point in leg['serviceJourney']['stopPoints']:
                     if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
                         stopPlaces.append(stop_point['place']['id'])
-            elif leg['mode'] == 'FOOT':
+            elif legs_mode[-1] == 'FOOT':
+                start_legs.append(leg['start']['place']['name'])
+                end_legs.append(leg['end']['place']['name'])
                 stop_point = leg['start']['place']
                 if (stop_point['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['id'] != stopPlaces[-1])):
                     stopPlaces.append(stop_point['id'])
@@ -117,7 +126,7 @@ def get_trips_infos(journey):
         arrival_time = arrival_to_time(trip)
         duration = string_to_actual_time(trip['duration'])
         
-        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
+        res.append({'id' : trip['id'], 'departure_time':departure_time, 'arrival_time':arrival_time, 'duration':duration,  'numberLegs' : len(trip['legs']), 'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
 
 def get_stations(location_name):
@@ -201,6 +210,14 @@ def get_closest_train_park_coords(ids):
                 break
     return closest_train_park_coords
 
+def get_drive_time_to_parking(origin, closest_train_park_coords):
+    drive_time_to_parking = []
+    for coords in closest_train_park_coords:
+        start = {"longitude": origin[0], "latitude": origin[1]}
+        parking = {"longitude": coords[0], "latitude": coords[1]}
+        drive_time_to_parking.append(math.ceil(osm_helpers.get_itinerary_properties(start, parking)["duration"]/60))
+    return drive_time_to_parking
+
 def get_platform_coordinates(station_id, platform, sector= None):
     """Extracts coordinates of a given platform of a given station
     Args:
@@ -216,6 +233,16 @@ def get_platform_coordinates(station_id, platform, sector= None):
         return api.get_stopplaces_by_id(station_id)['centroid']['coordinates']
     else:
         return features['features'][0]['geometry']['coordinates']
+    
+def get_walk_time_to_train_platform(closest_train_stations_ids, closest_train_park_coords):
+    walk_time_to_train_platform = []
+    for i, station in enumerate(closest_train_stations_ids):
+        # Get the platform coords
+        platform_coords = get_platform_coordinates(station, 1)
+        # Compute the distance
+        dist_park_platform = getDistanceFromLatLonInKm(platform_coords[0], platform_coords[1], closest_train_park_coords[i][0], closest_train_park_coords[i][1])
+        walk_time_to_train_platform.append(math.ceil(dist_park_platform/5*60,)) # in minutes
+    return walk_time_to_train_platform
 
 def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
 
