@@ -106,3 +106,19 @@ def get_stations(location_name):
 
 def get_station_id(station):
     return station["id"]
+
+def get_platform_coordinates(station_id, platform, sector= None):
+    """Extracts coordinates of a given platform of a given station
+    Args:
+        station_id (string): ID of the station
+        platform (int): number of the platform
+        sector (string): optional, name of the sector(s) (eg. 'A' or 'A,B')
+    Returns:
+        list: coordinates vector of platform centroid (midpoint of the sectors) or of the station of no information of the station's is provided in the dataset
+    """
+    features = api.get_platform_features(int(station_id), platform, sector)
+
+    if np.isin('status', list(features.keys())) and (features['status'] == 400):
+        return api.get_stopplaces_by_id(station_id)['centroid']['coordinates']
+    else:
+        return features['features'][0]['geometry']['coordinates']

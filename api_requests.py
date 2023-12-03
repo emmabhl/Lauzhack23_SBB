@@ -13,6 +13,7 @@ NEARBY_PLACES_URL = SERVICE_URL + "/v3/places/by-coordinates-geojson"
 TRANSPORTS_FROM_ID_URL = SERVICE_URL + "/v3/vehicle-journeys/by-departure/"
 trips_url = SERVICE_URL + "/v3/trips/by-origin-destination"
 station_url = SERVICE_URL + "/v3/places"
+stop_places_url = SERVICE_URL + "/v3/stop-places/"
 
 def get_token():
     params = {
@@ -56,14 +57,15 @@ def get_places(nameMatch):
         "nameMatch": nameMatch}
     return requests.get(station_url, params=request_body, headers={"Authorization": "Bearer " + token}).json()
 
+def get_stopplaces_by_id(id):
+    return requests.get(stop_places_url+id, headers={"Authorization": "Bearer " + token}).json()
 
 def get_header_journey_map():
     return {'X-API-Key': 'bf9e3a88ab8101ba22ba8c752bbbcfd8'}
 
-def get_platform_floor(station, platform, sector = None):
+def get_platform_features(station, platform, sector = None):
     platform_floor_url = JOURNEY_MAP_URL + f"v1/master-data/stations/{station}/platforms/{platform}/midpoint"
     request_body = {
         'sectors': sector
-
     }
     return requests.get(platform_floor_url, params = request_body, headers= get_header_journey_map()).json()
