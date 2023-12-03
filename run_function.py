@@ -15,11 +15,28 @@ def run(data_user):
     else: 
         if takes_car(origin):
             trips = remove_trips(origin, destination, departure_day, departure_time, 'CAR')
+            for trip in trips:
+                station_id = get_id_from_name(trip['start_of_legs'][0])
+                closest_parking = get_closest_train_park_coords(station_id)
+                driving_time = get_drive_time_to_parking(origin, closest_parking)
+                walk_time = get_walk_time_to_train_platform(station_id, closest_parking)
+                trip['duration'] = trip['duration'] + driving_time + walk_time
+                trip['departure_time'] = trip['departure_time'] - driving_time - walk_time
+                trip['numberLegs'] = trip['numberLegs'] + 1
+                trip['modes'] = ['CAR'] + trip['modes']
+                trip['start_of_legs'] = [str(origin)] + trip['start_of_legs']
+                trip['end_of_legs'] = [str(closest_parking)] + trip['end_of_legs']
+                trip['departure_times_legs'] = [trip['departure_time']] + trip['departure_times_legs']
+                trip['arrival_times_legs'] = [trip['departure_time'] + driving_time + walk_time] + trip['arrival_times_legs']
+                
+
+            if ~transport_mean['TRAIN']:
         else: 
             trips = remove_trips(origin, destination, departure_day, departure_time, 'FOOT')
 
     infos = get_trips_infos(trips)
     df = convert_infos_to_dataframe(infos)
+
 
 
     transports_chosen = []
