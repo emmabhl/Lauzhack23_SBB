@@ -8,7 +8,7 @@ import os
 import math
 import osm_helpers
 
-LIST_TRANSPORT = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP"]
+LIST_TRANSPORT = ["TRAIN", "TRAMWAY", "BUS", "CABLEWAY", "SHIP", "METRO"]
 
 def string_to_actual_time(result):
     hours_nb = 0
@@ -254,7 +254,12 @@ def get_walk_time_to_train_platform(closest_train_stations_ids, closest_train_pa
 
 def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
 
-    nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
+    if mode_to_departure == 'CAR':
+        nrst_dep_stations = get_closest_train_stations_from_departure_by_car(current_coord)
+    elif mode_to_departure == 'FOOT':
+        nrst_dep_stations = get_ids_of_places(api.get_nearby_places(current_coord[0], current_coord[1], radius=1500, 
+                                                                    type="StopPlace", limit=5, includeVehicleModes=False))
+    
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
                                                                 type="StopPlace", limit=5, includeVehicleModes=False))
     #nearest stations are a lists of IDs
