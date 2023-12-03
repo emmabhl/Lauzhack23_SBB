@@ -70,7 +70,7 @@ st.markdown("""---""")
 
 #display the results
 if(origin==None or destination==None or day==None or t==None ): st.write(':red[Still informations missing, please provide them]')
-#elif(result==None): st.write(':blue[Calculation on going, please wait]')
+elif(result==None): st.write(':blue[Calculation on going, please wait]')
 else:
     #test dataframe
     result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
