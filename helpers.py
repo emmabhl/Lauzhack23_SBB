@@ -69,14 +69,24 @@ def is_applicable(position, waiting_time_threshold):
 
 def departure_to_time(trip):
     """Returns the departure time of a trip"""
-    departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    if trip['legs'][0]['mode'] == 'TRAIN':
+        departure = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    elif trip['legs'][0]['mode'] == 'FOOT':
+        departure = trip['legs'][0]['start']['timeAimed']
+    else:
+        print(trip['legs'][0]['mode'])
     departure = datetime.strptime(departure, '%Y-%m-%dT%H:%M:%S%z')
     departure = departure.replace(tzinfo=None)
     return departure
 
 def arrival_to_time(trip):
     """Returns the arrival time of a trip"""
-    arrival = trip['legs'][-1]['serviceJourney']['stopPoints'][-1]['arrival']['timeAimed']
+    if trip['legs'][0]['mode'] == 'TRAIN':
+        arrival = trip['legs'][0]['serviceJourney']['stopPoints'][0]['departure']['timeAimed']
+    elif trip['legs'][0]['mode'] == 'FOOT':
+        arrival = trip['legs'][0]['end']['timeAimed']
+    else:
+        print(trip['legs'][0]['mode'])
     arrival = datetime.strptime(arrival, '%Y-%m-%dT%H:%M:%S%z')
     arrival = arrival.replace(tzinfo=None)
     return arrival
@@ -90,15 +100,14 @@ def get_trips_infos(journey):
     for trip in journey['trips']:
         stopPlaces = []
         for leg in trip['legs']:
-            print(leg)
             if leg['mode'] == 'TRAIN':
                 for stop_point in leg['serviceJourney']['stopPoints']:
                     if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
                         stopPlaces.append(stop_point['place']['id'])
             elif leg['mode'] == 'FOOT':
-                for stop_point in leg['start']:
-                    if (stop_point['place']['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['place']['id'] != stopPlaces[-1])):
-                        stopPlaces.append(stop_point['place']['id'])
+                stop_point = leg['start']['place']
+                if (stop_point['type'] == 'StopPlace') and ((len(stopPlaces)==0) or (stop_point['id'] != stopPlaces[-1])):
+                    stopPlaces.append(stop_point['id'])
         
         departure_time = departure_to_time(trip)
         arrival_time = arrival_to_time(trip)
@@ -219,12 +228,13 @@ def remove_trips(current_coord, arrival_coord, date, time):
             journey = api.get_journey(origin=station_dep_id, destination = station_arr_id, date = date, time = time)
             infos = get_trips_infos(journey)
 
-            for trip in infos:
-                if np.isin(station_dep_id, trip['stopPlaces'].pop(0)) :
-                    idx = trip['id']
+            for idx, trip in enumerate(infos):
+                trip['stopPlaces'].pop(0)
+                trip['stopPlaces'].pop(-1)
+                if np.isin(station_dep_id, trip['stopPlaces']) :
                     journey['trips'].pop(idx)
-                if np.isin(station_arr_id, trip['stopPlaces'].pop(-1)) :
-                    idx = trip['id']
+
+                if np.isin(station_arr_id, trip['stopPlaces']) :
                     journey['trips'].pop(idx)
 
         journeys.append(journey)
