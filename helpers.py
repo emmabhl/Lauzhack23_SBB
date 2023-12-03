@@ -109,33 +109,16 @@ def get_departures_times(trips):
 
 def get_trips_infos(journey):
     res = []
-    # If journey is empty, return empty list
-    merde = False
-    if 'trips' not in journey.keys():
-        bordel = journey
-        merde = True
-    else :
-        bordel = journey['trips']
-
-    # if bordel is a string 
-    if len(bordel) == 0: #or isinstance(bordel, str):
-        return res
     
-    for trip in bordel:
-        print(trip)
+    for trip in journey["trips"]:
         stopPlaces = []
         legs_mode = []
         start_legs = []
         end_legs = []
         legs_start_time = []
         legs_end_time = []
-
-        if merde:
-            petit_bordel = trip[0]['legs']
-        else:
-            petit_bordel = trip['legs']
         
-        for i, leg in enumerate(petit_bordel):
+        for i, leg in enumerate(trip['legs']):
             
             legs_mode.append(leg['mode'])
             legs_start_time.append(departure_to_time(trip, i))
@@ -322,7 +305,8 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
             # If journey is empty, skip
             if len(journey['trips']) == 0:
                 continue
-            infos = get_trips_infos(journey)
+            for trip in journey["trips"]:
+                infos = get_trips_infos(journey)
 
             for idx, trip in enumerate(infos):
                 trip['stopPlaces'].pop(0)
@@ -336,6 +320,12 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
         journeys.append(journey)
     return journeys
                     
+def get_parking_closest_to_station_with_name(station_name):
+    # Get the id of the station
+    id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
+    # Get the coordinates of the station
+    return get_closest_train_park_coords(ids=[id])
+
         
 
 
