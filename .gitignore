@@ -1,1 +1,4 @@
 __pycache__/*
+keys.py
+.gitignore
+switzerland-latest.osm.pbf
