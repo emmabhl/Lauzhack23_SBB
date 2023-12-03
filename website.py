@@ -60,7 +60,7 @@ funicular_cog_railway = col1.checkbox('Cableway/Cog railway', value=True)
 
 #Store data in a dictionnary
 data_user = {'origin':origin, 'destination':destination, 'departure_day':day, 'departure_time':t,
-             'transport_mean':{'TRAIN':train,'BUS':bus, 'FOOT':foot, 'CAR':car, 'SHIP':boat, 
+             'transport_mean': {'TRAIN':train,'BUS':bus, 'FOOT':foot, 'CAR':car, 'SHIP':boat, 
                                'TRAMWAY':metro_tram,'CABLEWAY':funicular_cog_railway, }}
 
 
