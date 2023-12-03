@@ -203,6 +203,16 @@ def get_platform_coordinates(station_id, platform, sector= None):
         return api.get_stopplaces_by_id(station_id)['centroid']['coordinates']
     else:
         return features['features'][0]['geometry']['coordinates']
+    
+def get_walk_time_to_train_platform(closest_train_stations_ids, closest_train_park_coords):
+    walk_time_to_train_platform = []
+    for i, station in enumerate(closest_train_stations_ids):
+        # Get the platform coords
+        platform_coords = get_platform_coordinates(station, 1)
+        # Compute the distance
+        dist_park_platform = getDistanceFromLatLonInKm(platform_coords[0], platform_coords[1], closest_train_park_coords[i][0], closest_train_park_coords[i][1])
+        walk_time_to_train_platform.append(math.ceil(dist_park_platform/5*60,)) # in minutes
+    return walk_time_to_train_platform
 
 def remove_trips(current_coord, arrival_coord, date, time):
 
