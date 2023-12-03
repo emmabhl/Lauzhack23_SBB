@@ -12,12 +12,17 @@ def run(data_user):
 
     if ~transport_mean['CAR']:
         trips = remove_trips(origin, destination, departure_day, departure_time, 'FOOT')
+        trips = {'trips': np.array([journey['trips'] for journey in trips]).flatten()}
+
     else: 
         if takes_car(origin):
             trips = remove_trips(origin, destination, departure_day, departure_time, 'CAR')
+            trips = {'trips': np.array([journey['trips'] for journey in trips]).flatten()}
+
             for trip in trips:
-                station_id = get_id_from_name(trip['start_of_legs'][0])
-                closest_parking = get_closest_train_park_coords(station_id)
+                station_name = trip['start_of_legs'][0]
+                station_id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
+                closest_parking = get_parking_closest_to_station_with_name(station_name)
                 driving_time = get_drive_time_to_parking(origin, closest_parking)
                 walk_time = get_walk_time_to_train_platform(station_id, closest_parking)
                 trip['duration'] = trip['duration'] + driving_time + walk_time
@@ -29,11 +34,10 @@ def run(data_user):
                 trip['departure_times_legs'] = [trip['departure_time']] + trip['departure_times_legs']
                 trip['arrival_times_legs'] = [trip['departure_time'] + driving_time + walk_time] + trip['arrival_times_legs']
                 
-
-            if ~transport_mean['TRAIN']:
         else: 
             trips = remove_trips(origin, destination, departure_day, departure_time, 'FOOT')
-
+            trips = {'trips': np.array([journey['trips'] for journey in trips]).flatten()}
+    
     infos = get_trips_infos(trips)
     df = convert_infos_to_dataframe(infos)
 
