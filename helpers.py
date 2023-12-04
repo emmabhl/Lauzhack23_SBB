@@ -142,15 +142,10 @@ def get_trips_infos(journey):
                     'modes': legs_mode, 'start_of_legs':start_legs, 'end_of_legs':end_legs, 'departure_times_leg':legs_start_time, 'arrival_times_leg':legs_end_time, 'stopPlaces':stopPlaces, 'TotNumberStops': len(stopPlaces)})
     return res
 
-def convert_infos_to_dataframe(infos = None, df = None):
+def convert_infos_to_dataframe(df = None):
 
     """Converts result of get_trips_infos into dataframe
         ARG =  either provide the result of get_trips_infos, or the simple conversion to pandas dataframe"""
-
-    if (df == None) and (infos != None):
-        df = pd.json_normalize(infos, meta = list(infos[0].keys()))
-    else:
-        raise ValueError("Please provide at least one of infos or df")
 
     df = df.explode(['modes', 'start_of_legs', 'end_of_legs', 'departure_times_leg', 'arrival_times_leg'])
     df = df.drop(columns = ['id', 'stopPlaces', 'TotNumberStops', 'departure_time', 'arrival_time'])
@@ -288,7 +283,6 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
     elif mode_to_departure == 'FOOT':
         places = api.get_nearby_places(current_coord[0], current_coord[1], radius=1500, 
                                                                     type="StopPlace", limit=5, includeVehicleModes=False)
-        print(places)
         nrst_dep_stations = get_ids_of_places(places)
     
     nrst_arr_stations = get_ids_of_places(api.get_nearby_places(arrival_coord[0], arrival_coord[1], radius=1500, 
@@ -315,13 +309,10 @@ def remove_trips(current_coord, arrival_coord, date, time, mode_to_departure):
         journeys.append(journey)
     return journeys
                     
-def get_parking_closest_to_station_with_name(station_name):
+def station_name_to_id(station_name):
     # Get the id of the station
     id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
-    # Get the coordinates of the station
-    return get_closest_train_park_coords(ids=[id])
-
-        
+    return id[0]
 
 
 

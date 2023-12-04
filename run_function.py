@@ -35,26 +35,29 @@ def run(data_user):
     trips = remove_trips(origin, destination, departure_day, departure_time, 'FOOT')
     trips = flatten_dict(trips)
     infos = get_trips_infos(trips)
-    df = convert_infos_to_dataframe(infos)
-    print(df)
+
+    if infos is not None:
+        df = pd.json_normalize(infos, meta = list(infos[0].keys()))
+    else:
+        raise ValueError("Please provide at least one of infos or df")
 
     if by == 'CAR':
-        station_names = df.groupby('Journey_nbr').head(1).Departure
+        for _, trip in df.iterrows():
+            station_name = trip['start_of_legs'][0]
+            station_id = station_name_to_id(station_name)
+            closest_parking = get_closest_train_park_coords([station_id])
+            driving_time = get_drive_time_to_parking(origin, closest_parking)[0]
+            walk_time = 10 #get_walk_time_to_train_platform([station_id], closest_parking)[0]
+            trip['duration'] = int(trip['duration']) + driving_time + walk_time
+            trip['departure_time'] = trip['departure_time'] - pd.Timedelta(driving_time + walk_time, unit='minutes')
+            trip['numberLegs'] = int(trip['numberLegs']) + 1
+            trip['modes'] = ['CAR'] + trip['modes']
+            trip['start_of_legs'] = [str(origin)] + trip['start_of_legs']
+            trip['end_of_legs'] = [str(closest_parking)] + trip['end_of_legs']
+            trip['departure_times_leg'] = [trip['departure_time']] + trip['departure_times_leg']
+            trip['arrival_times_leg'] = [trip['departure_time'] + pd.Timedelta(driving_time + walk_time, unit='minutes')] + trip['arrival_times_leg']
 
-        for trip in df:
-            station_name = station_names[station_names.loc(trip.Journey_nbr)]
-            station_id = [place["id"] for place in api.get_places(station_name)["places"] if place["name"]==station_name]
-            closest_parking = get_parking_closest_to_station_with_name(station_name)
-            driving_time = get_drive_time_to_parking(origin, closest_parking)
-            walk_time = get_walk_time_to_train_platform(station_id, closest_parking)
-            trip['Journey_duration'] = trip['Journey_duration'] + driving_time + walk_time
-            trip['departure_time'] = trip['departure_time'] - driving_time - walk_time
-            trip['Tot_nbr_stages'] = trip['Tot_nbr_stages'] + 1
-            trip['Transport_mode'] = ['CAR'] + trip['Transport_mode']
-            trip['Departure'] = [str(origin)] + trip['Departure']
-            trip['Arrival'] = [str(closest_parking)] + trip['Arrival']
-            trip['Time_departure'] = [trip['departure_time']] + trip['Time_departure']
-            trip['Time_arrival'] = [trip['departure_time'] + driving_time + walk_time] + trip['Time_arrival']
+    df = convert_infos_to_dataframe(df)
 
     transports_chosen = []
     for mode in list(transport_mean.keys()):
@@ -66,6 +69,9 @@ def run(data_user):
     bad_journey=np.unique(non_good_df['Journey_nbr'].values)
     filtered_df=df[~df['Journey_nbr'].isin(bad_journey)]
 
-    final_df = filtered_df.sort_values(by='Journey_duration').head(3)
+    extract_best = filtered_df.groupby('Journey_nbr')['Time_arrival'].last().sort_values()
+    # Keep only the 3 best journeys
+    extract_best = extract_best.index[-3:]
+    final_df = filtered_df.loc[extract_best]
 
     return final_df
