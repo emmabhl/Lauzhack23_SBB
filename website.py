@@ -14,9 +14,9 @@ st.title('Your journey')
 #to avoid errors in storing data which is not yet defined
 origin = None
 destination = None
-day=None
-t=None
-result=None
+#day=None
+#t=None
+#result=None
 
 current_pos=st.selectbox('Do you want to start from your current position?', ('Choose an option', 'Yes', 'No'))
 if (current_pos=='Yes'): 
@@ -45,8 +45,10 @@ elif(current_pos_destintation=='No'):
         destination = possible_destination[possible_destination['name']==destination_name]['centroid'].values[0]
 
 
-day = st.date_input('Departune day')
-t = st.time_input('Departune time', key=dt.datetime.now())
+day = str(st.date_input('Departune day'))
+day = day.replace("/", "-")
+
+t = str(st.time_input('Departune time', key=dt.datetime.now()))
 
 st.write('Which transport type would you like to use?')
 col1, col2, col3 = st.columns(3)
@@ -61,32 +63,30 @@ funicular_cog_railway = col1.checkbox('Cableway/Cog railway', value=True)
 #Store data in a dictionnary
 data_user = {'origin':origin, 'destination':destination, 'departure_day':day, 'departure_time':t,
              'transport_mean': {'TRAIN':train,'BUS':bus, 'FOOT':foot, 'CAR':car, 'SHIP':boat, 
-                               'TRAMWAY':metro_tram,'CABLEWAY':funicular_cog_railway, }}
+                               'TRAMWAY':metro_tram,'CABLEWAY':funicular_cog_railway}}
 
 
 st.markdown("""---""")
 
 #Run notre algo stocker la dataframe de résultats dans result
 
-
 #display the results
-if(origin==None or destination==None or day==None or t==None ): st.write(':red[Still informations missing, please provide them]')
-elif(result==None): st.write(':blue[Calculation on going, please wait]')
+if(origin==None or destination==None or day==None or t==None ): 
+    st.write(':red[Still informations missing, please provide them]')
+#elif(result==None): 
 else:
     #test dataframe
-    result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
-    result['Journey_nbr']= [1,1,2]
-    result['Departure']=['A','B','C']
-    result['Arrival']=['B','C', 'D']
-    result['Time_departure']=['9:00', '10:00','11:00']
-    result['Time_arrival']=['9:30', '10:20','11:10']
-    result['Journey_duration']=[30,20,10]
-    result['Transport_mode']=['Train', 'Car', 'Foot']
-    result['Tot_nbr_stages']=[3,3,3]
-
-    #st.write(':blue[blurp1]')
-    #result=run(data_user)
-    #st.write(':blue[blurp2]')
+    #result = pd.DataFrame(columns = [['Journey_nbr', 'Departure', 'Arrival', 'Time_departure', 'Time_arrival', 'Journey_duration','Transport_mode', 'Tot_nbr_stages', 'Tot_price' ]])
+    #result['Journey_nbr']= [1,1,2]
+    #result['Departure']=['A','B','C']
+    #result['Arrival']=['B','C', 'D']
+    #result['Time_departure']=['9:00', '10:00','11:00']
+    #result['Time_arrival']=['9:30', '10:20','11:10']
+    #result['Journey_duration']=[30,20,10]
+    #result['Transport_mode']=['Train', 'Car', 'Foot']
+    #result['Tot_nbr_stages']=[3,3,3]
+    st.write(':blue[Calculation on going, please wait]')
+    result=run(data_user)
 
     #display the result
     nbr_journey_tot = np.max(result['Journey_nbr'])
@@ -94,7 +94,7 @@ else:
     button_names=[]
     all_transport=[]
     for n in  range (nbr_journey_tot):
-        trips = result.iloc[np.where(result['Journey_nbr'] == (n+1))[0]]
+        trips = result[result['Journey_nbr']==n+1]
         all_trips.append(trips)
         
         m = len(trips['Journey_nbr'])

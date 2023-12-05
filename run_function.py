@@ -2,7 +2,7 @@ from helpers import *
 from api_requests import *
 
 def run(data_user):
-
+    api.use_token()
 
     origin = data_user["origin"]
     destination = data_user["destination"]
@@ -32,7 +32,7 @@ def run(data_user):
         else:
             return trips
         
-    trips = remove_trips(origin, destination, departure_day, departure_time, 'FOOT')
+    trips = remove_trips(origin, destination, departure_day, departure_time, by)
     trips = flatten_dict(trips)
     infos = get_trips_infos(trips)
 
@@ -69,9 +69,10 @@ def run(data_user):
     bad_journey=np.unique(non_good_df['Journey_nbr'].values)
     filtered_df=df[~df['Journey_nbr'].isin(bad_journey)]
 
-    extract_best = filtered_df.groupby('Journey_nbr')['Time_arrival'].last().sort_values()
+    extract_best = filtered_df.groupby('Journey_nbr')['Time_arrival'].last().sort_values(ascending=False)
     # Keep only the 3 best journeys
-    extract_best = extract_best.index[-3:]
-    final_df = filtered_df.loc[extract_best]
+    n_best = np.min([3, len(extract_best)])
+    extract_best = extract_best.index[:n_best]
+    final_df = filtered_df[filtered_df['Journey_nbr'].isin(extract_best)]
 
     return final_df

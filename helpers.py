@@ -102,9 +102,11 @@ def get_departures_times(trips):
 
 def takes_car(origin):
     # Get the nearby public transport places in a 1km radius
+    train_station = None
     nearby_places = api.get_nearby_places(longitude=origin[0], latitude=origin[1], radius=1000, type="StopPlace", limit=50, includeVehicleModes=False)
     # Compute distance to closest trainstation
-    train_station = get_closest_train_station(nearby_places)
+    if nearby_places is not None:
+        train_station = get_closest_train_station(nearby_places)
     return train_station is None
 
 def get_trips_infos(journey):

@@ -36,6 +36,7 @@ def use_token():
     token = get_token()["access_token"]
 
 def get_journey(origin, destination, date, time):
+    # change date format from YYYY/MM/DD to YYYY-MM-DD   
     request_body = {
         "origin": origin,
         "destination": destination,
@@ -47,11 +48,12 @@ def get_journey(origin, destination, date, time):
 
 def get_nearby_places(longitude, latitude, radius, limit, type, includeVehicleModes):
     params = {
-        'center': f"[ {longitude}, {latitude} ]",
+        'center': f"[{longitude}, {latitude}]",
         'radius': radius,
         'limit': limit,
         'type': type, # Get only stop places = train stops
         'includeVehicleModes':includeVehicleModes} 
+    return None
     return requests.get(NEARBY_PLACES_URL, params=params, headers={"Authorization": "Bearer " + token}).json()
 
 def get_place_from_id(id):
